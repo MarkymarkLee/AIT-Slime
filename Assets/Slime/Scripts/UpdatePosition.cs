@@ -7,7 +7,6 @@ using UnityEngine.Analytics;
 public class UpdatePosition : MonoBehaviour
 {
     private List<Transform> slimeNodes = new List<Transform>();
-    private Transform slimeNodesObj;
     private MeshFilter meshFilter;
     private Mesh mesh;
     private CreateSlimeNodes createSlimeNodes;
@@ -37,25 +36,13 @@ public class UpdatePosition : MonoBehaviour
 
             // Update the mesh vertices
             UpdateMeshVertices();
+            // UpdateSlimePosition();
         }
     }
 
     void InitializeNodes()
     {
-        slimeNodesObj = transform.Find("SlimeNodes");
-        if (slimeNodesObj != null)
-        {
-            slimeNodes.Clear();
-            foreach (Transform child in slimeNodesObj)
-            {
-                slimeNodes.Add(child);
-            }
-            initialized = true;
-        }
-        else
-        {
-            Debug.LogError("SlimeNodes object not found!");
-        }
+        slimeNodes = gameObject.GetComponent<CreateSlimeNodes>().instantiatedNodes.ConvertAll(node => node.transform);
     }
 
     void UpdateMeshVertices()

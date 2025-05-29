@@ -8,30 +8,33 @@ public class CreateSlimeNodes : MonoBehaviour
 {
     public GameObject nodePrefab;
 
-    [Header("Spring Joint Settings")]
+    [Header("Children Springs Settings")]
     public float springStrength = 100f;
     public float springDamper = 5f;
 
+    [Header("Center Springs Settings")]
+    public float recoverSpringStrength = 100f;
+    public float recoverSpringDamper = 5f;
+
 
     private MeshFilter meshFilter;
-    private List<GameObject> instantiatedNodes = new List<GameObject>();
+    public List<GameObject> instantiatedNodes = new List<GameObject>();
     private Transform slimeNodesObj;
-    private List<SpringJoint> instantiatedSprings = new List<SpringJoint>();
 
+    private Rigidbody centerRigidbody;
+
+    private ArticulationBody articulationBody;
     public bool generatedBody = false;
+    private List<SpringJoint> instantiatedSprings = new List<SpringJoint>();
+    public List<Vector3> Anchors = new List<Vector3>();
 
     private void Awake()
     {
         meshFilter = GetComponent<MeshFilter>();
-
         // Ensure the SlimeNodes parent exists
-        slimeNodesObj = transform.Find("SlimeNodes");
-        if (slimeNodesObj == null)
-        {
-            GameObject slimeNodesObj = new GameObject("SlimeNodes");
-            slimeNodesObj.transform.parent = transform;
-        }
-
+        slimeNodesObj = transform.Find("CenterNode");
+        articulationBody = slimeNodesObj.GetComponent<ArticulationBody>();
+        centerRigidbody = slimeNodesObj.GetComponent<Rigidbody>();
     }
 
     private void Start()
@@ -67,35 +70,16 @@ public class CreateSlimeNodes : MonoBehaviour
         // Access mesh vertices and triangles
         Vector3[] vertices = meshFilter.mesh.vertices;
 
-
-        // create center node
-        Vector3 worldPos = transform.TransformPoint(Vector3.zero);
-
-        // Instantiate the prefab at the vertex position
-        GameObject node = Instantiate(nodePrefab, worldPos, Quaternion.identity);
-        node.name = "CenterSlimeNode";
-
-        // Make the node a child of the SlimeNodes object for organization
-        node.transform.parent = gameObject.transform;
-
-        // Add to our list for tracking
-        instantiatedNodes.Add(node);
-
         // Create objects at each vertex position
         for (int i = 0; i < vertices.Length; i++)
         {
-            // Transform the local vertex position to world space
-            worldPos = transform.TransformPoint(vertices[i]);
-
-            // Instantiate the prefab at the vertex position
-            node = Instantiate(nodePrefab, worldPos, Quaternion.identity);
+            Vector3 worldPos = transform.TransformPoint(vertices[i]);
+            GameObject node = Instantiate(nodePrefab, worldPos, Quaternion.identity);
             node.name = "SlimeNode_" + i;
-
-            // Make the node a child of the SlimeNodes object for organization
             node.transform.parent = slimeNodesObj;
-
-            // Add to our list for tracking
             instantiatedNodes.Add(node);
+            Anchors.Add(node.transform.localPosition);
+            CreateSpringForNode(node);
         }
 
         Debug.Log($"Generated {instantiatedNodes.Count} nodes from mesh with {vertices.Length} vertices");
@@ -119,9 +103,24 @@ public class CreateSlimeNodes : MonoBehaviour
                 GameObject nodeB = instantiatedNodes[j];
                 CreateSpringBetweenNodes(nodeA, nodeB, connections);
             }
+            // Create a spring for the node itself
+            // CreateSpringForNode(instantiatedNodes[i]);
         }
 
         Debug.Log($"Created {instantiatedSprings.Count} spring joints between all nodes.");
+    }
+
+    private void CreateSpringForNode(GameObject node)
+    {
+        // Create a spring joint for the node
+        SpringJoint spring = node.AddComponent<SpringJoint>();
+        spring.spring = recoverSpringStrength;
+        spring.damper = recoverSpringDamper;
+        spring.connectedBody = centerRigidbody;
+        spring.connectedArticulationBody = articulationBody;
+        spring.autoConfigureConnectedAnchor = false;
+        spring.anchor = Vector3.zero; // Set the anchor to the center of the node
+        instantiatedSprings.Add(spring);
     }
 
     private void CreateSpringBetweenNodes(GameObject nodeA, GameObject nodeB, HashSet<string> connections)
@@ -140,7 +139,6 @@ public class CreateSlimeNodes : MonoBehaviour
         spring.connectedBody = nodeB.GetComponent<Rigidbody>();
         spring.spring = springStrength;
         spring.damper = springDamper;
-        spring.autoConfigureConnectedAnchor = true;
 
 
         // Track this connection

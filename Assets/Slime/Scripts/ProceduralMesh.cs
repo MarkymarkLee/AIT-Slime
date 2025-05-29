@@ -4,10 +4,13 @@ using ProceduralMeshes.Generators;
 using ProceduralMeshes.Streams;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.UIElements;
 
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class ProceduralMesh : MonoBehaviour
 {
+
+	public float scale = 1f;
 
 	static MeshJobScheduleDelegate[] jobs = {
 		MeshJob<SquareGrid, SingleStream>.ScheduleParallel,
@@ -200,7 +203,7 @@ public class ProceduralMesh : MonoBehaviour
 		verticesList = new List<UnityEngine.Vector3>(mesh.vertexCount);
 		for (int i = 0; i < mesh.vertexCount; i++)
 		{
-			verticesList.Add(mesh.vertices[i]);
+			verticesList.Add(mesh.vertices[i] * scale);
 		}
 	}
 }
