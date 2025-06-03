@@ -27,6 +27,8 @@ public class SlimeControls : MonoBehaviour
 
     private BreathControllerV2 breathController;
 
+    private bool prevButtonPressed = false;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -96,7 +98,7 @@ public class SlimeControls : MonoBehaviour
         // Handle A button for expanding/shrinking
         if (useAButtonForExpand && aButtonAction != null && aButtonAction.action != null)
         {
-            if (aButtonAction.action.triggered)
+            if (aButtonAction.action.WasPressedThisFrame() && prevButtonPressed == false)
             {
                 if (breathController.currentCharacterState == BreathControllerV2.CharacterState.normal)
                 {
@@ -111,6 +113,7 @@ public class SlimeControls : MonoBehaviour
                     breathController.UpdateCharacterState(BreathControllerV2.CharacterState.enlarged);
                 }
             }
+            prevButtonPressed = aButtonAction.action.WasPressedThisFrame();
         }
 
         switch (breathController.currentCharacterState)

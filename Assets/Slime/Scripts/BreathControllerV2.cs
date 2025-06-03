@@ -14,10 +14,12 @@ public class BreathControllerV2 : MonoBehaviour
     [Header("連接設定")]
     public string pythonHost = "localhost";
     public int pythonPort = 7777;
+    public string ESP32_Host = "192.168.1.129";
 
     // 模式設定
-    public enum Mode { breath_control, unity_control }
+    public enum Mode { breath_control, unity_control, breath_detection }
     public Mode currentMode = Mode.unity_control;
+
 
     // 網路相關
     private TcpClient tcpClient;
@@ -123,7 +125,7 @@ public class BreathControllerV2 : MonoBehaviour
                     
                 case "breath_update":
                     // 接收呼吸狀態更新（僅在breath_control模式）
-                    if (currentMode == Mode.breath_control)
+                    if (currentMode == Mode.breath_control || currentMode == Mode.breath_detection)
                     {
                         currentBreathState = messageData["state"].ToString();
                         string source = messageData["source"].ToString();
@@ -185,11 +187,11 @@ public class BreathControllerV2 : MonoBehaviour
             string pythonExe = "python"; // 或 "python3"，視你的環境而定
             string scriptPath = Path.Combine(Application.dataPath, "Slime/Scripts/breath_simulator_v2.py"); // 根據實際路徑調整
             // 根據 currentMode 設定 Python 啟動參數
-            string modeArg = currentMode == Mode.breath_control ? "breath_control" : "unity_control";
+            string modeArg = currentMode.ToString().ToLower();
             var psi = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = pythonExe,
-                Arguments = $"\"{scriptPath}\" --mode {modeArg}",
+                Arguments = $"\"{scriptPath}\" --mode {modeArg} --unity_port {pythonPort} --esp32_host {ESP32_Host}",
                 UseShellExecute = true,
                 CreateNoWindow = false,
             };
